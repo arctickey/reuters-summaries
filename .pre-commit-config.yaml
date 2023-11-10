@@ -1,0 +1,51 @@
+default_language_version:
+  python: python3.9
+
+default_stages:
+  - commit
+  - push
+  - manual
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: trailing-whitespace
+        exclude: ".*\\.md"
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-toml
+
+  - repo: local
+    hooks:
+      - id: isort
+        name: isort
+        entry: poetry run isort
+        types:
+          - python
+        language: system
+
+      - id: black
+        name: black
+        entry: poetry run black
+        types:
+          - python
+        language: system
+
+      - id: flake8
+        name: flake8
+        entry: poetry run flake8
+        types:
+          - python
+        language: system
+        args: ["--max-line-length=100"]
+      - id: mypy
+        name: mypy
+        entry: poetry run mypy
+        types:
+          - python
+        language: system
+        args: ["--strict","--ignore-missing-imports"]
