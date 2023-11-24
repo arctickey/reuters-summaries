@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 
 import newspaper
+import requests
+from bs4 import BeautifulSoup
 
 
 @dataclass
@@ -70,13 +72,13 @@ def _create_world_area_objects(
     """
     world_areas = []
     for area in areas:
-        if area == "":  # world area
+        if area == "world":  # world area
             number_articles_to_fetch = number_of_world_articles_to_fetch
         else:
             number_articles_to_fetch = number_of_other_articles_to_fetch
         area_to_fetch = WorldArea(
             area=area,
-            base_url=f"{url}/{area}",
+            base_url=f"{url}/{area}/?date=today",
             number_of_articles_to_fetch=number_articles_to_fetch,
         )
         world_areas.append(area_to_fetch)
@@ -87,17 +89,14 @@ def _fetch_area_articles_urls(world_area: WorldArea) -> WorldArea:
     """
     For each world_area get list of article urls to download.
     """
-    area_articles_website = newspaper.build(
-        world_area.base_url, language="en", memoize_articles=False
-    )
-    area_articles_website_to_fetch = area_articles_website.articles
-    area_articles_website_to_fetch = [
-        article.url
-        for article in area_articles_website_to_fetch[
-            : world_area.number_of_articles_to_fetch
-        ]
-    ]
-    setattr(world_area, "articles_links", area_articles_website_to_fetch)
+    response = requests.get(world_area.base_url)
+    soup = BeautifulSoup(response.text, "html.parser")
+    links_with_class = soup.find_all("div", class_="story-content")
+    links = []
+    for link in links_with_class[: world_area.number_of_articles_to_fetch]:
+        full_url = f"https://www.reuters.com{link.a['href']}"
+        links.append(full_url)
+    setattr(world_area, "articles_links", links)
     return world_area
 
 
@@ -121,6 +120,3 @@ def _fetch_articles_text(world_area: WorldArea) -> WorldArea:
         texts.append(text)
     setattr(world_area, "articles_text", texts)
     return world_area
-
-
-# %%

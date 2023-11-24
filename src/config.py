@@ -2,12 +2,12 @@ from pathlib import Path
 
 
 class Config:
-    REUTERS_URL = "https://www.reuters.com/world"
+    REUTERS_URL = "https://www.reuters.com/news/archive"
     WORLD_AREAS_TO_FETCH = [
-        "",
+        "world",
         "africa",
-        "americas",
-        "asia-pacific",
+        "usa",
+        "asia",
         "europe",
         "middle-east",
     ]
