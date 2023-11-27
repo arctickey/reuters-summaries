@@ -1,8 +1,9 @@
-from dataclasses import dataclass, field
-
+from dataclasses import asdict, dataclass, field
+import pandas as pd
 import newspaper
 import requests
 from bs4 import BeautifulSoup
+import datetime
 
 
 @dataclass
@@ -23,59 +24,73 @@ class NewsArticle:
 def scrape_articles(
     areas_to_fetch: list[str],
     reuters_url: str,
-    number_of_world_articles_to_fetch: int,
-    number_of_other_articles_to_fetch: int,
+    number_articles_to_fetch: int,
 ) -> list[WorldArea]:
     """_summary_
 
     Args:
         areas_to_fetch (list[str]): world areas to fetch from reuters site
         reuters_url (str): Base reuters website url.
-        number_of_world_articles_to_fetch (int): how many articles about world data to fetch
-        number_of_other_articles_to_fetch (int): how many articles about certain continents to fetch
+        number_articles_to_fetch (int): how many articles about to fetch
     Returns:
         list[WorldArea]: list of WorldArea objects
     """
     world_areas_created = _create_world_area_objects(
         areas=areas_to_fetch,
         url=reuters_url,
-        number_of_world_articles_to_fetch=number_of_world_articles_to_fetch,
-        number_of_other_articles_to_fetch=number_of_other_articles_to_fetch,
+        number_articles_to_fetch=number_articles_to_fetch,
     )
     world_areas_with_article_urls = [
         _fetch_area_articles_urls(world_area=world_area)
         for world_area in world_areas_created
     ]
     world_areas_with_fetched_articles_text = [
-        _fetch_articles_text(world_area=world_area)
+        _save_articles_text(world_area=world_area)
         for world_area in world_areas_with_article_urls
     ]
-    return world_areas_with_fetched_articles_text
+    articles_df = prepare_fetched_articles_for_saving(
+        articles_text=world_areas_with_fetched_articles_text
+    )
+    return articles_df
+
+
+def prepare_fetched_articles_for_saving(articles_text: list[str]) -> pd.DataFrame:
+    """
+    Convert list of fetched articles with metadata to a DataFrame.
+    """
+    dfs = []
+    for area in articles_text:
+        df = pd.DataFrame(asdict(area))
+        df["title"] = [
+            df["articles_text"].values[i]["title"] for i in range(df.shape[0])
+        ]
+        df["text"] = [df["articles_text"].values[i]["text"] for i in range(df.shape[0])]
+        df = df[["area", "articles_links", "title", "text"]].rename(
+            {"articles_links": "article_link"}
+        )
+        dfs.append(df)
+    df_to_save = pd.concat(dfs).drop_duplicates(subset="title").reset_index(drop=True)
+    df_to_save["date"] = int(datetime.date.today().strftime("%Y%m%d"))
+    return df_to_save
 
 
 def _create_world_area_objects(
     areas: list[str],
     url: str,
-    number_of_world_articles_to_fetch: int,
-    number_of_other_articles_to_fetch: int,
+    number_articles_to_fetch: int,
 ) -> list[WorldArea]:
     """
     Create WorldArea object with area names, base_url and number_of_articles_to_fetch.
     Args:
         areas (list[str]): world areas to fetch from reuters site
         url (str): Base reuters website url.
-        number_of_world_articles_to_fetch (int): how many articles about world data to fetch
-        number_of_other_articles_to_fetch (int): how many articles about certain continents to fetch
+        number_of_world_articles_to_fetch (int): how many articles to fetch
 
     Returns:
         list[WorldArea]: list of WorldArea objects
     """
     world_areas = []
     for area in areas:
-        if area == "world":  # world area
-            number_articles_to_fetch = number_of_world_articles_to_fetch
-        else:
-            number_articles_to_fetch = number_of_other_articles_to_fetch
         area_to_fetch = WorldArea(
             area=area,
             base_url=f"{url}/{area}/?date=today",
@@ -110,7 +125,7 @@ def _fetch_article_text(article_url: str) -> NewsArticle:
     return NewsArticle(title=article.title, text=article.text)
 
 
-def _fetch_articles_text(world_area: WorldArea) -> WorldArea:
+def _save_articles_text(world_area: WorldArea) -> WorldArea:
     """
     For each world area get text of all articles.
     """

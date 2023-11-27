@@ -11,6 +11,6 @@ class Config:
         "europe",
         "middle-east",
     ]
-    NUMBER_OF_WORLD_ARTICLES_TO_FETCH = 5
-    NUMBER_OF_OTHER_ARTICLES_TO_FETCH = 3
+    NUMBER_ARTICLES_TO_FETCH = 10
     RAW_DATA_PATH = Path("./data/raw/raw_articles.parquet")
+    SUMMARISED_DATA_PATH = Path("./data/processed/summarised_articles.parquet")
