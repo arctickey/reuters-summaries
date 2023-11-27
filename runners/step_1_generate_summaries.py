@@ -1,10 +1,11 @@
 # %%
 import logging
 
-from utils import save_parquet
-from src.config import Config as cfg
 import pandas as pd
+
+from src.config import Config as cfg
 from src.reuters_summary.step_1_generate_summaries import generate_summaries
+from utils import save_parquet
 
 logger = logging.getLogger(__name__)
 

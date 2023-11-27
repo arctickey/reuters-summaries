@@ -1,9 +1,10 @@
+import datetime
 from dataclasses import asdict, dataclass, field
-import pandas as pd
+
 import newspaper
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import datetime
 
 
 @dataclass
@@ -25,7 +26,7 @@ def scrape_articles(
     areas_to_fetch: list[str],
     reuters_url: str,
     number_articles_to_fetch: int,
-) -> list[WorldArea]:
+) -> pd.DataFrame:
     """_summary_
 
     Args:
@@ -33,7 +34,7 @@ def scrape_articles(
         reuters_url (str): Base reuters website url.
         number_articles_to_fetch (int): how many articles about to fetch
     Returns:
-        list[WorldArea]: list of WorldArea objects
+        pd.DataFrame: dataframe with fetched articles texts
     """
     world_areas_created = _create_world_area_objects(
         areas=areas_to_fetch,
@@ -54,7 +55,7 @@ def scrape_articles(
     return articles_df
 
 
-def prepare_fetched_articles_for_saving(articles_text: list[str]) -> pd.DataFrame:
+def prepare_fetched_articles_for_saving(articles_text: list[WorldArea]) -> pd.DataFrame:
     """
     Convert list of fetched articles with metadata to a DataFrame.
     """
